@@ -1,0 +1,28 @@
+const express = require('express');
+const router = express.Router();
+const productController = require('../controllers/productController');
+const { protect, authorize } = require('../middleware/auth');
+const upload = require('../middleware/upload');
+const handleValidationErrors = require('../middleware/validation');
+const { createProductValidator } = require('../validators/productValidator');
+
+router.get('/featured', productController.getFeaturedProducts);
+router.get('/flash-sale', productController.getFlashSaleProducts);
+router.get('/best-sellers', productController.getBestSellerProducts);
+router.get('/trending', productController.getTrendingProducts);
+router.get('/new-arrivals', productController.getNewArrivals);
+router.get('/', productController.getAllProducts);
+router.get('/slug/:slug', productController.getProductBySlug);
+router.get('/:id', productController.getProductById);
+
+router.post('/', protect, authorize('admin'), upload.fields([
+  { name: 'images', maxCount: 10 },
+  { name: 'video', maxCount: 1 },
+]), createProductValidator, handleValidationErrors, productController.createProduct);
+router.put('/:id', protect, authorize('admin'), upload.fields([
+  { name: 'images', maxCount: 10 },
+  { name: 'video', maxCount: 1 },
+]), productController.updateProduct);
+router.delete('/:id', protect, authorize('admin'), productController.deleteProduct);
+
+module.exports = router;
