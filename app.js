@@ -42,16 +42,17 @@ app.use(
   })
 );
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-});
-app.use('/api/', limiter);
-
 // CORS (use centralized options that validate allowed origins)
 const { corsOptions } = require('./config/cors');
 app.use(cors(corsOptions));
+
+// Rate limit API requests after CORS so throttled responses retain CORS headers.
+const limiter = rateLimit({
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+  skip: (req) => req.method === 'OPTIONS',
+});
+app.use('/api/', limiter);
 
 // Body parser
 app.use(express.json({ limit: '50mb' }));
