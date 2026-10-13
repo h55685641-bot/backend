@@ -1,6 +1,6 @@
 const Product = require('../models/Product');
 const Category = require('../models/Category');
-const { slugify, calculatePagination } = require('../utils/helpers');
+const { slugify, calculatePagination, generateUniqueId } = require('../utils/helpers');
 const { uploadSingleImage, uploadMultipleImages, deleteImage, deleteMultipleImages } = require('../services/cloudinaryService');
 
 const parseArrayField = (value) => {
@@ -138,10 +138,19 @@ exports.createProduct = async (req, res) => {
       isTrending,
     });
 
-    console.log('📦 Creating product:', { name, sku, price, productType });
+    const hasProductName = Boolean(String(name || '').trim());
+    const normalizedName = hasProductName ? String(name).trim() : 'New Product';
+    const generatedId = generateUniqueId();
+    const normalizedSku = String(sku || '').trim() || `AUTO-${generatedId}`;
+
+    if (!Object.values(collectionFlags).some(Boolean)) {
+      collectionFlags.isNewArrival = true;
+    }
+
+    console.log('📦 Creating product:', { name: normalizedName, sku: normalizedSku, price, productType });
     console.log('📤 Files received:', req.files?.length || 0, 'file(s)');
 
-    let product = await Product.findOne({ sku });
+    let product = await Product.findOne({ sku: normalizedSku });
     if (product) {
       console.log('❌ SKU already exists:', sku);
       return res.status(400).json({ success: false, message: 'SKU already exists' });
@@ -221,15 +230,15 @@ exports.createProduct = async (req, res) => {
     }
 
     product = await Product.create({
-      name,
-      slug: slugify(name),
-      description,
-      price,
+      name: normalizedName,
+      slug: slugify(hasProductName ? normalizedName : `new-product-${generatedId}`),
+      description: String(description || '').trim() || 'Product details coming soon.',
+      price: price === undefined || price === '' ? 0 : price,
       comparePrice,
-      category,
+      category: category || undefined,
       subcategory,
-      sku,
-      stock,
+      sku: normalizedSku,
+      stock: stock === undefined || stock === '' ? 0 : stock,
       images: imageUrls,
       media: mediaItems,
       videoUrl: externalVideoUrl,
