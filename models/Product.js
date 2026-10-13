@@ -3,8 +3,8 @@ const mongoose = require('mongoose');
 const productSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'Product name is required'],
     trim: true,
+    default: 'New Product',
   },
   slug: {
     type: String,
@@ -13,12 +13,12 @@ const productSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: [true, 'Product description is required'],
+    default: 'Product details coming soon.',
   },
   shortDescription: String,
   price: {
     type: Number,
-    required: [true, 'Product price is required'],
+    default: 0,
     min: 0,
   },
   comparePrice: {
